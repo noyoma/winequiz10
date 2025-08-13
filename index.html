@@ -1,9 +1,186 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-  <title>와인퀴즈10</title>
+    <title>Wine Quiz</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+        #quiz-container { max-width: 600px; margin: auto; background: #f4f4f4; padding: 20px; border-radius: 8px; }
+        .option-button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; text-align: left; cursor: pointer; border: 1px solid #ccc; background-color: #fff; border-radius: 4px; }
+        .option-button:hover { background-color: #e9e9e9; }
+        .correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .incorrect { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        #feedback { margin-top: 15px; padding: 10px; border-radius: 4px; }
+        #next-button { display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; }
+        #next-button:hover { background-color: #0056b3; }
+        #score-area { margin-top: 20px; font-size: 1.2em; font-weight: bold; }
+    </style>
 </head>
 <body>
-  <h1>와인력을 키워주는 와인퀴즈들을 풀어보시라</h1>
+
+<div id="quiz-container">
+    <h1 style="text-align: center;">Wine Quiz</h1>
+    <div id="question-number"></div>
+    <div id="question-text" style="margin-bottom: 20px;"></div>
+    <div id="options-container">
+        <!-- Answer options will be inserted here by JavaScript -->
+    </div>
+    <div id="feedback" style="min-height: 1.5em;">
+        <!-- Feedback message will be displayed here -->
+    </div>
+    <button id="next-button" style="display: none;">Next Question</button>
+    <div id="score-area" style="display: none; text-align: center;">
+        <!-- Final score will be displayed here -->
+    </div>
+</div>
+
+
+<script>
+    const questions = [];
+    
+const questions = %s; // This will be replaced by the actual data
+
+let currentQuestionIndex = 0;
+let score = 0;
+let shuffledQuestions = [];
+let answerSelected = false; // Flag to prevent selecting multiple answers for one question
+const questionsPerPage = 10; // Number of questions to display per page
+
+// Function to shuffle array
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+    }
+    return array;
+}
+
+// Function to display the current question
+function displayQuestion() {
+    answerSelected = false; // Reset flag for the new question
+    const questionData = shuffledQuestions[currentQuestionIndex];
+    document.getElementById('question-number').innerText = `Question ${currentQuestionIndex % questionsPerPage + 1} of ${questionsPerPage}`; // Display question number within the current set
+    document.getElementById('question-text').innerText = questionData.question;
+
+    const optionsContainer = document.getElementById('options-container');
+    optionsContainer.innerHTML = ''; // Clear previous options
+
+    const options = questionData.options;
+    const optionKeys = Object.keys(options); // Get keys (e.g., "가. ", "나. ")
+
+    // Create buttons for options
+    optionKeys.forEach(key => {
+        const button = document.createElement('button');
+        button.classList.add('option-button');
+        button.innerText = `${key}${options[key]}`; // Display option key and text
+        button.dataset.answerKey = key.charAt(0).toLowerCase(); // Store the lowercase letter (a, b, c, d)
+        button.addEventListener('click', handleAnswer);
+        optionsContainer.appendChild(button);
+    });
+
+    document.getElementById('feedback').innerText = ''; // Clear previous feedback
+    document.getElementById('next-button').style.display = 'none'; // Hide next button initially
+    document.getElementById('next-button').innerText = 'Next Question'; // Reset button text
+}
+
+// Function to handle answer selection and provide feedback
+function handleAnswer(event) {
+    if (answerSelected) return; // Prevent multiple selections
+
+    answerSelected = true;
+    const selectedButton = event.target;
+    const selectedAnswerKey = selectedButton.dataset.answerKey; // Get the stored letter (a, b, c, d)
+    const correctAnswerKey = shuffledQuestions[currentQuestionIndex].answer; // Get the correct answer letter
+
+    const feedbackElement = document.getElementById('feedback');
+    const optionButtons = document.querySelectorAll('.option-button');
+
+    // Provide feedback and highlight correct/incorrect
+    optionButtons.forEach(button => {
+        const buttonAnswerKey = button.dataset.answerKey;
+        if (buttonAnswerKey === correctAnswerKey) {
+            button.classList.add('correct');
+        } else if (button === selectedButton) {
+            button.classList.add('incorrect');
+        }
+        button.removeEventListener('click', handleAnswer); // Disable clicking after selection
+    });
+
+
+    if (selectedAnswerKey === correctAnswerKey) {
+        score++;
+        feedbackElement.innerText = 'Correct!';
+        feedbackElement.style.color = 'green';
+    } else {
+        feedbackElement.innerText = `Incorrect. The correct answer was: ${getOptionText(shuffledQuestions[currentQuestionIndex].options, correctAnswerKey)}`;
+        feedbackElement.style.color = 'red';
+    }
+
+    document.getElementById('next-button').style.display = 'block'; // Show next button
+}
+
+// Helper function to get the full option text based on the answer key (a, b, c, d)
+function getOptionText(options, answerKey) {
+    const optionKeys = Object.keys(options);
+    for (const key of optionKeys) {
+        if (key.charAt(0).toLowerCase() === answerKey) {
+            return `${key}${options[key]}`;
+        }
+    }
+    return 'Unknown Answer'; // Should not happen if data is correct
+}
+
+// Function to move to the next question or display the score
+function nextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < shuffledQuestions.length) {
+        if (currentQuestionIndex > 0 && currentQuestionIndex % questionsPerPage === 0) {
+            // End of a set of 10 questions, display score for this set
+            displaySetScore();
+        } else {
+            displayQuestion();
+        }
+    } else {
+        // End of all questions
+        displayScore();
+    }
+}
+
+// Function to display the score for the current set of 10 questions
+function displaySetScore() {
+    document.getElementById('quiz-container').innerHTML = `
+        <h1 style="text-align: center;">Set Finished!</h1>
+        <div id="score-area" style="text-align: center;">
+            You scored ${score % questionsPerPage} out of ${questionsPerPage} in this set.<br>
+            Total score so far: ${score} out of ${currentQuestionIndex}.
+        </div>
+         <button id="next-set-button" style="display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px;">Next Set</button>
+    `;
+     document.getElementById('next-set-button').addEventListener('click', nextQuestion); // Use nextQuestion to continue
+}
+
+
+// Function to display the final score
+function displayScore() {
+    document.getElementById('quiz-container').innerHTML = `
+        <h1 style="text-align: center;">Quiz Finished!</h1>
+        <div id="score-area" style="text-align: center;">
+            Your final score is ${score} out of ${shuffledQuestions.length}.
+        </div>
+    `;
+}
+
+// Initialize quiz
+document.addEventListener('DOMContentLoaded', () => {
+    shuffledQuestions = shuffleArray([...questions]); // Shuffle a copy of the questions
+    displayQuestion();
+    document.getElementById('next-button').addEventListener('click', nextQuestion);
+});
+
+</script>
+
+
 </body>
 </html>
